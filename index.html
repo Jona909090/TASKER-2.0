@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="sr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tasker 2.0 — Kontrola poslovanja</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="shell">
+<aside class="side">
+  <div class="brand"><div class="logo">T</div><div><b>TASKER 2.0</b><small>Kontrola poslovanja</small></div></div>
+  <nav>
+    <button class="nav active" data-view="dashboard">◈ Nadzorna ploča</button>
+    <div class="group"><button class="nav toggle">▣ Operativa <span>⌄</span></button><div class="sub open"><button data-view="projects">Gradilišta</button></div></div>
+    <div class="group"><button class="nav toggle">✉ Pisarnica <span>⌄</span></button><div class="sub"><button data-view="incoming">Ulazna pošta</button><button data-view="outgoing">Izlazna pošta</button><button data-view="offers">Ponude</button></div></div>
+    <div class="group"><button class="nav toggle">€ Računovodstvo <span>⌄</span></button><div class="sub"><button data-view="incomingInvoices">Ulazni računi</button><button data-view="invoices">Fakture</button><button data-view="cash">Blagajne</button></div></div>
+    <div class="group"><button class="nav toggle">▤ Knjigovodstvo <span>⌄</span></button><div class="sub"><button data-view="journal">Izravno knjiženje</button><button data-view="ledger">Izvod konta</button><button data-view="assets">Osnovna sredstva</button><button data-view="vat">PDV prijava</button><button data-view="gl">Glavna knjiga</button></div></div>
+    <div class="group"><button class="nav toggle">🏦 Bankarstvo <span>⌄</span></button><div class="sub"><button data-view="bank">Bankovni izvodi</button><button data-view="payments">Nalozi za plaćanje</button></div></div>
+    <div class="group"><button class="nav toggle">👥 Kadrovska <span>⌄</span></button><div class="sub open"><button data-view="employees">Zaposlenici</button><button data-view="candidates">Kandidati</button><button data-view="leave">Godišnji odmori</button><button data-view="hours">Radni sati</button></div></div>
+    <div class="group"><button class="nav toggle">▦ Plaće <span>⌄</span></button><div class="sub"><button data-view="payroll">Obračun plaća</button><button data-view="joppd">JOPPD obrasci</button></div></div>
+    <div class="group"><button class="nav toggle">📁 Dokumentacija <span>⌄</span></button><div class="sub"><button data-view="contracts">Ugovori</button><button data-view="companyDocs">Dokumentacija firme</button></div></div>
+    <div class="group"><button class="nav toggle">🛒 Nabava <span>⌄</span></button><div class="sub"><button data-view="orders">Narudžbenice</button><button data-view="items">Artikli</button></div></div>
+  </nav>
+  <div class="company"><i></i><div><b>CTBA DEMO</b><small>Aktivna firma</small></div></div>
+</aside>
+<main>
+<header><div><small class="eyebrow">TASKER 2.0 / POSLOVANJE</small><h1 id="title">Nadzorna ploča</h1></div><div class="actions"><div class="search">⌕ <input placeholder="Pretraži sustav..."></div><button class="bell">🔔<em>3</em></button><div class="avatar">SJ</div></div></header>
+<section id="content"></section>
+</main>
+</div>
+<script src="app.js"></script>
+</body></html>
