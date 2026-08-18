@@ -1,0 +1,25 @@
+/* TASKER 2.0 — dashboard readability fix */
+#content .card,
+#content .card strong,
+#content .card b,
+#content .card h2,
+#content .card h3,
+#content .card h4,
+#content .card .project,
+#content .card .project strong,
+#content .card .project b,
+#content .card .project-head,
+#content .card .alert,
+#content .card .alert strong,
+#content .card .alert b,
+#content .project,
+#content .project strong,
+#content .project b,
+#content .project-head,
+#content .alert,
+#content .alert strong,
+#content .alert b,
+#content button,
+#content td {
+  color: #fff;
+}
