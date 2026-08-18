@@ -7,26 +7,30 @@
 </head>
 <body>
 <section id="companyGate" class="company-gate">
+  <div class="gate-bg-lines gate-bg-lines-a"></div>
+  <div class="gate-bg-lines gate-bg-lines-b"></div>
   <div class="gate-top">
     <div class="gate-brand"><div class="logo">T</div><div><b>TASKER 2.0</b><small>Kontrola poslovanja</small></div></div>
     <div class="gate-user"><button class="gate-bell">♢</button><div><b>Stefan</b><small>Administrator</small></div><div class="avatar">SJ</div></div>
   </div>
   <div class="gate-main">
-    <div class="gate-date" id="gateDate">TASKER 2.0</div>
+    <div class="gate-datetime"><span class="gate-date" id="gateDate">UTORAK, 18. KOLOVOZA 2026.</span><span class="gate-sep">|</span><span class="gate-clock" id="gateClock">21:22:43</span></div>
     <h1 id="gateGreeting">Dobro veče, Stefan!</h1>
     <p>Odaberi firmu za početak rada.</p>
-    <div class="gate-clock" id="gateClock">20:00:00</div>
     <div class="company-search"><span>⌕</span><input id="companySearch" placeholder="Pretraži firme po nazivu, adresi ili OIB-u..."><button>▦</button><button>☷</button></div>
     <div class="company-grid" id="companyGrid">
       <article class="company-card" data-company="tasker d.o.o.">
+        <div class="company-card-glow"></div>
         <div class="company-card-top"><div class="company-icon">T</div><span class="status green">● Aktivno</span></div>
         <h2>TASKER d.o.o.</h2>
-        <div class="company-meta"><span>⌖</span><div><b>Poslovni sustav</b><small>Tasker 2.0</small></div></div>
+        <div class="company-card-divider"></div>
+        <div class="company-meta"><span>✧</span><div><b>Poslovni sustav</b><small>Tasker 2.0</small></div></div>
         <div class="company-meta"><span>▤</span><div><b>OIB</b><small>Demo podaci</small></div></div>
         <button class="open-company" onclick="openCompany()">Otvori <span>→</span></button>
       </article>
     </div>
   </div>
+  <div class="gate-hero-logo" aria-hidden="true"><div class="gate-hero-logo-inner">T</div></div>
   <footer class="gate-footer">© 2026 Tasker 2.0. Sva prava pridržana.</footer>
 </section>
 <div class="shell app-hidden" id="appShell">
