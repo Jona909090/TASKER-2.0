@@ -1,49 +1,57 @@
-const COMPANY_STORAGE_KEY='tasker2_company_profile_v1';
-const companyDefaults={name:'TASKER d.o.o.',system:'Tasker 2.0',oib:'Demo podaci',status:'Aktivno',units:['Glavna poslovna jedinica'],activeUnit:'Glavna poslovna jedinica'};
-let companyProfile=loadCompanyProfile();
-function loadCompanyProfile(){try{return {...companyDefaults,...JSON.parse(localStorage.getItem(COMPANY_STORAGE_KEY)||'{}')}}catch(e){return {...companyDefaults}}}
-function saveCompanyProfile(){localStorage.setItem(COMPANY_STORAGE_KEY,JSON.stringify(companyProfile));renderCompanyProfile();}
-function renderCompanyProfile(){
-  const set=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val};
-  set('companyNameCard',companyProfile.name||companyDefaults.name);
-  set('companySystemCard',companyProfile.system||companyDefaults.system);
-  set('companyOibCard',companyProfile.oib||companyDefaults.oib);
-  set('companyUnitCard',companyProfile.activeUnit||companyProfile.units?.[0]||'Nije odabrano');
-  set('sidebarCompanyName',companyProfile.name||companyDefaults.name);
-  const card=document.getElementById('companyCard');if(card)card.dataset.company=`${companyProfile.name} ${companyProfile.oib} ${(companyProfile.units||[]).join(' ')}`.toLowerCase();
-  const status=document.getElementById('companyStatusLabel');if(status){status.textContent=`● ${companyProfile.status}`;status.className=`status ${companyProfile.status==='Aktivno'?'green':'yellow'}`}
+const MASTER_KEY='tasker2_master_start_v2';
+const masterDefaults={
+  user:{name:'Stefan',role:'Administrator',initials:'SJ'},
+  brand:{name:'TASKER 2.0',subtitle:'Kontrola poslovanja',logo:'T'},
+  gate:{subtitle:'Odaberi firmu za početak rada.',footer:'© 2026 Tasker 2.0. Sva prava pridržana.'},
+  companies:[{id:'tasker-main',name:'TASKER d.o.o.',system:'Tasker 2.0',oib:'Demo podaci',status:'Aktivno',units:['Glavna poslovna jedinica'],activeUnit:'Glavna poslovna jedinica',showSystem:true,showOib:true,showUnit:true}]
+};
+let masterState=loadMaster();
+let editingCompanyId=masterState.companies[0]?.id||null;
+let activeCompanyId=editingCompanyId;
+function cloneDefaults(){return JSON.parse(JSON.stringify(masterDefaults))}
+function loadMaster(){try{const saved=JSON.parse(localStorage.getItem(MASTER_KEY)||'null');return saved?mergeMaster(saved):cloneDefaults()}catch(e){return cloneDefaults()}}
+function mergeMaster(saved){const d=cloneDefaults();return {...d,...saved,user:{...d.user,...(saved.user||{})},brand:{...d.brand,...(saved.brand||{})},gate:{...d.gate,...(saved.gate||{})},companies:Array.isArray(saved.companies)&&saved.companies.length?saved.companies:d.companies}}
+function saveMaster(){localStorage.setItem(MASTER_KEY,JSON.stringify(masterState));renderAll()}
+function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function renderAll(){
+  const set=(id,val)=>{const e=document.getElementById(id);if(e)e.textContent=val};
+  set('topUserName',masterState.user.name);set('topUserRole',masterState.user.role);set('adminSettingsBtn',masterState.user.initials||'SJ');
+  set('topBrandName',masterState.brand.name);set('topBrandSubtitle',masterState.brand.subtitle);set('topBrandLogo',masterState.brand.logo||'T');set('heroLogoText',masterState.brand.logo||'T');
+  set('gateSubtitle',masterState.gate.subtitle);set('gateFooter',masterState.gate.footer);
+  renderCompanyCards();
+  const active=masterState.companies.find(c=>c.id===activeCompanyId)||masterState.companies[0];if(active)set('sidebarCompanyName',active.name);
+  if(typeof updateTaskerWelcome==='function')updateTaskerWelcome();
 }
-function openCompanySettings(){
-  document.getElementById('settingCompanyName').value=companyProfile.name||'';
-  document.getElementById('settingCompanySystem').value=companyProfile.system||'';
-  document.getElementById('settingCompanyOib').value=companyProfile.oib||'';
-  document.getElementById('settingCompanyStatus').value=companyProfile.status||'Aktivno';
-  renderUnitList();
-  const modal=document.getElementById('companySettingsModal');modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+function renderCompanyCards(){
+  const grid=document.getElementById('companyGrid');if(!grid)return;
+  grid.innerHTML=masterState.companies.map(c=>`<article class="company-card" data-company="${esc((c.name+' '+c.oib+' '+(c.units||[]).join(' ')).toLowerCase())}"><div class="company-card-glow"></div><div class="company-card-top"><div class="company-icon">${esc(masterState.brand.logo||'T')}</div><span class="status ${c.status==='Aktivno'?'green':'yellow'}">● ${esc(c.status)}</span></div><h2>${esc(c.name)}</h2><div class="company-card-divider"></div>${c.showSystem!==false?`<div class="company-meta"><span>✧</span><div><b>Poslovni sustav</b><small>${esc(c.system)}</small></div></div>`:''}${c.showOib!==false?`<div class="company-meta"><span>▤</span><div><b>OIB</b><small>${esc(c.oib)}</small></div></div>`:''}${c.showUnit!==false?`<div class="company-meta"><span>⌂</span><div><b>Poslovna jedinica</b><small>${esc(c.activeUnit||c.units?.[0]||'Nije odabrano')}</small></div></div>`:''}<button class="open-company" onclick="selectCompanyAndOpen('${c.id}')">Otvori <span>→</span></button></article>`).join('');
+  applyCompanySearch();
 }
-function closeCompanySettings(){const modal=document.getElementById('companySettingsModal');modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}
-function renderUnitList(){
-  const list=document.getElementById('unitList');
-  const units=companyProfile.units||[];
-  list.innerHTML=units.length?units.map((unit,i)=>`<div class="unit-row ${unit===companyProfile.activeUnit?'active':''}"><button class="unit-select" data-unit-index="${i}"><span class="unit-radio"></span><b>${escapeHtml(unit)}</b>${unit===companyProfile.activeUnit?'<small>Prikazuje se na kartici</small>':''}</button><button class="unit-delete" data-delete-index="${i}" ${units.length===1?'disabled':''}>×</button></div>`).join(''):'<div class="unit-empty">Nema poslovnih jedinica.</div>';
-  list.querySelectorAll('.unit-select').forEach(btn=>btn.addEventListener('click',()=>{companyProfile.activeUnit=units[Number(btn.dataset.unitIndex)];renderUnitList()}));
-  list.querySelectorAll('.unit-delete').forEach(btn=>btn.addEventListener('click',()=>{const idx=Number(btn.dataset.deleteIndex);const removed=companyProfile.units[idx];companyProfile.units.splice(idx,1);if(companyProfile.activeUnit===removed)companyProfile.activeUnit=companyProfile.units[0]||'';renderUnitList()}));
+function applyCompanySearch(){const input=document.getElementById('companySearch');if(!input)return;const q=input.value.toLowerCase();document.querySelectorAll('.company-card').forEach(c=>c.style.display=c.dataset.company.includes(q)?'block':'none')}
+window.selectCompanyAndOpen=function(id){activeCompanyId=id;renderAll();if(typeof openCompany==='function')openCompany()}
+function openMaster(){fillMasterFields();renderAdminCompanies();loadEditor(editingCompanyId||masterState.companies[0]?.id);const m=document.getElementById('companySettingsModal');m.classList.add('open');m.setAttribute('aria-hidden','false')}
+function closeMaster(){const m=document.getElementById('companySettingsModal');m.classList.remove('open');m.setAttribute('aria-hidden','true')}
+function fillMasterFields(){
+  settingUserName.value=masterState.user.name;settingUserRole.value=masterState.user.role;settingUserInitials.value=masterState.user.initials;settingBrandName.value=masterState.brand.name;settingBrandSubtitle.value=masterState.brand.subtitle;settingBrandLogo.value=masterState.brand.logo;settingGateSubtitle.value=masterState.gate.subtitle;settingFooter.value=masterState.gate.footer;
 }
-function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function readMasterFields(){masterState.user={name:settingUserName.value.trim()||'Stefan',role:settingUserRole.value.trim()||'Administrator',initials:settingUserInitials.value.trim().toUpperCase()||'SJ'};masterState.brand={name:settingBrandName.value.trim()||'TASKER 2.0',subtitle:settingBrandSubtitle.value.trim(),logo:settingBrandLogo.value.trim().toUpperCase()||'T'};masterState.gate={subtitle:settingGateSubtitle.value.trim(),footer:settingFooter.value.trim()}}
+function renderAdminCompanies(){const list=document.getElementById('companyAdminList');list.innerHTML=masterState.companies.map(c=>`<button class="admin-company ${c.id===editingCompanyId?'active':''}" data-id="${c.id}"><span class="mini-logo">${esc(masterState.brand.logo||'T')}</span><span><b>${esc(c.name)}</b><small>${esc(c.oib||'Bez OIB-a')}</small></span><em>${esc(c.status)}</em></button>`).join('');list.querySelectorAll('.admin-company').forEach(b=>b.onclick=()=>{saveEditorToState();editingCompanyId=b.dataset.id;renderAdminCompanies();loadEditor(editingCompanyId)})}
+function currentCompany(){return masterState.companies.find(c=>c.id===editingCompanyId)}
+function loadEditor(id){const c=masterState.companies.find(x=>x.id===id);const sec=document.getElementById('companyEditorSection');if(!c){sec.style.display='none';return}sec.style.display='block';settingCompanyName.value=c.name||'';settingCompanySystem.value=c.system||'';settingCompanyOib.value=c.oib||'';settingCompanyStatus.value=c.status||'Aktivno';showSystemField.checked=c.showSystem!==false;showOibField.checked=c.showOib!==false;showUnitField.checked=c.showUnit!==false;renderUnitList()}
+function saveEditorToState(){const c=currentCompany();if(!c)return;c.name=settingCompanyName.value.trim()||'Nova firma';c.system=settingCompanySystem.value.trim();c.oib=settingCompanyOib.value.trim();c.status=settingCompanyStatus.value;c.showSystem=showSystemField.checked;c.showOib=showOibField.checked;c.showUnit=showUnitField.checked}
+function renderUnitList(){const c=currentCompany();const list=document.getElementById('unitList');if(!c){list.innerHTML='';return}const units=c.units||[];list.innerHTML=units.length?units.map((u,i)=>`<div class="unit-row ${u===c.activeUnit?'active':''}"><button class="unit-select" data-i="${i}"><span class="unit-radio"></span><b>${esc(u)}</b>${u===c.activeUnit?'<small>Aktivna</small>':''}</button><button class="unit-delete" data-i="${i}">×</button></div>`).join(''):'<div class="unit-empty">Nema poslovnih jedinica.</div>';list.querySelectorAll('.unit-select').forEach(b=>b.onclick=()=>{c.activeUnit=units[+b.dataset.i];renderUnitList()});list.querySelectorAll('.unit-delete').forEach(b=>b.onclick=()=>{const i=+b.dataset.i,removed=c.units[i];c.units.splice(i,1);if(c.activeUnit===removed)c.activeUnit=c.units[0]||'';renderUnitList()})}
+function addCompany(){saveEditorToState();const id='firma-'+Date.now();masterState.companies.push({id,name:'Nova firma d.o.o.',system:'Tasker 2.0',oib:'',status:'Aktivno',units:['Glavna poslovna jedinica'],activeUnit:'Glavna poslovna jedinica',showSystem:true,showOib:true,showUnit:true});editingCompanyId=id;renderAdminCompanies();loadEditor(id)}
+function deleteCompany(){if(masterState.companies.length<=1){alert('Mora ostati najmanje jedna firma.');return}const c=currentCompany();if(!c)return;masterState.companies=masterState.companies.filter(x=>x.id!==c.id);if(activeCompanyId===c.id)activeCompanyId=masterState.companies[0].id;editingCompanyId=masterState.companies[0].id;renderAdminCompanies();loadEditor(editingCompanyId)}
 document.addEventListener('DOMContentLoaded',()=>{
-  renderCompanyProfile();
-  document.getElementById('adminSettingsBtn')?.addEventListener('click',openCompanySettings);
-  document.getElementById('settingsClose')?.addEventListener('click',closeCompanySettings);
-  document.getElementById('companySettingsModal')?.addEventListener('click',e=>{if(e.target.id==='companySettingsModal')closeCompanySettings()});
-  document.getElementById('addUnitBtn')?.addEventListener('click',()=>{const input=document.getElementById('newUnitInput');const name=input.value.trim();if(!name)return;if(!companyProfile.units.includes(name))companyProfile.units.push(name);companyProfile.activeUnit=name;input.value='';renderUnitList()});
-  document.getElementById('newUnitInput')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('addUnitBtn').click()}});
-  document.getElementById('saveCompanyBtn')?.addEventListener('click',()=>{
-    companyProfile.name=document.getElementById('settingCompanyName').value.trim()||companyDefaults.name;
-    companyProfile.system=document.getElementById('settingCompanySystem').value.trim()||companyDefaults.system;
-    companyProfile.oib=document.getElementById('settingCompanyOib').value.trim()||companyDefaults.oib;
-    companyProfile.status=document.getElementById('settingCompanyStatus').value;
-    if(!companyProfile.units?.length){companyProfile.units=[companyDefaults.units[0]];companyProfile.activeUnit=companyDefaults.units[0]}
-    saveCompanyProfile();closeCompanySettings();
-  });
-  document.getElementById('resetCompanyBtn')?.addEventListener('click',()=>{companyProfile={...companyDefaults,units:[...companyDefaults.units]};localStorage.removeItem(COMPANY_STORAGE_KEY);saveCompanyProfile();openCompanySettings()});
+  renderAll();
+  document.getElementById('companySearch')?.addEventListener('input',applyCompanySearch);
+  document.getElementById('adminSettingsBtn')?.addEventListener('click',openMaster);
+  document.getElementById('settingsClose')?.addEventListener('click',closeMaster);
+  document.getElementById('companySettingsModal')?.addEventListener('click',e=>{if(e.target.id==='companySettingsModal')closeMaster()});
+  document.getElementById('addCompanyBtn')?.addEventListener('click',addCompany);
+  document.getElementById('deleteCompanyBtn')?.addEventListener('click',deleteCompany);
+  document.getElementById('addUnitBtn')?.addEventListener('click',()=>{const c=currentCompany(),i=document.getElementById('newUnitInput'),n=i.value.trim();if(!c||!n)return;c.units=c.units||[];if(!c.units.includes(n))c.units.push(n);c.activeUnit=n;i.value='';renderUnitList()});
+  document.getElementById('newUnitInput')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addUnitBtn.click()}});
+  document.getElementById('saveCompanyBtn')?.addEventListener('click',()=>{readMasterFields();saveEditorToState();saveMaster();closeMaster()});
+  document.getElementById('resetCompanyBtn')?.addEventListener('click',()=>{masterState=cloneDefaults();editingCompanyId=masterState.companies[0].id;activeCompanyId=editingCompanyId;localStorage.removeItem(MASTER_KEY);saveMaster();fillMasterFields();renderAdminCompanies();loadEditor(editingCompanyId)});
 });
