@@ -1,96 +1,31 @@
-const PROJECTS_KEY='tasker2_projects_v2';
-let projectFilter='Aktivni';
-let projectSearch='';
-
-function loadProjectsStore(){
-  try{
-    const saved=JSON.parse(localStorage.getItem(PROJECTS_KEY)||'null');
-    if(Array.isArray(saved)&&saved.length){projectsData.splice(0,projectsData.length,...saved)}
-  }catch(e){}
+(()=>{
+const KEY='tasker2_projects_v3';
+const seed=(window.projectsData||[]).map((p,i)=>({id:p.id||`PRJ-${i+1}`,name:p.name||'',status:p.status||'Aktivan',start:p.start||'',end:p.end||'',workers:Number(p.workers)||0,cost:p.cost||'0 €',billed:p.billed||'0 €',progress:Number(p.progress)||0,address:p.address||'',client:p.client||'',manager:p.manager||'',note:p.note||''}));
+let list=[];let filter='Aktivni';let search='';
+try{const saved=JSON.parse(localStorage.getItem(KEY)||'null');list=Array.isArray(saved)&&saved.length?saved:seed}catch(e){list=seed}
+if(!list.length)list=[
+{id:'PRJ-1',name:'Kuća Čolak',status:'Aktivan',start:'12.03.2026',end:'',workers:8,cost:'35.730 €',billed:'46.000 €',progress:78,address:'',client:'',manager:'',note:''},
+{id:'PRJ-2',name:'Pajić-Amerikanac',status:'Aktivan',start:'04.05.2026',end:'',workers:6,cost:'18.260 €',billed:'27.800 €',progress:61,address:'',client:'',manager:'',note:''},
+{id:'PRJ-3',name:'VERTIV',status:'Aktivan',start:'10.01.2026',end:'',workers:12,cost:'42.190 €',billed:'58.500 €',progress:84,address:'',client:'',manager:'',note:''},
+{id:'PRJ-4',name:'Vinkovićeva 3',status:'Isporučeno',start:'08.02.2026',end:'',workers:5,cost:'28.410 €',billed:'36.200 €',progress:100,address:'',client:'',manager:'',note:''}
+];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>Number(String(v??0).replace(/[^0-9,.-]/g,'').replace(/\./g,'').replace(',','.'))||0;
+const money=v=>new Intl.NumberFormat('hr-HR',{maximumFractionDigits:2}).format(Number(v)||0)+' €';
+const result=p=>money(num(p.billed)-num(p.cost));
+const save=()=>localStorage.setItem(KEY,JSON.stringify(list));
+const dateToInput=s=>{const m=String(s||'').match(/^(\d{2})\.(\d{2})\.(\d{4})$/);return m?`${m[3]}-${m[2]}-${m[1]}`:s||''};
+const dateFromInput=s=>{if(!s)return'';const a=s.split('-');return a.length===3?`${a[2]}.${a[1]}.${a[0]}`:s};
+function visible(){const q=search.trim().toLowerCase();return list.filter(p=>{const ok=filter==='Sve'||(filter==='Aktivni'&&p.status==='Aktivan')||(filter==='Isporučeno'&&p.status==='Isporučeno')||(filter==='Arhiva'&&p.status==='Arhiva');return ok&&(!q||`${p.name} ${p.client} ${p.address} ${p.manager}`.toLowerCase().includes(q))})}
+function renderRows(){const body=$('taskerProjectRows');if(!body)return;const rows=visible();body.innerHTML=rows.map(p=>`<tr class="table-link" data-project-id="${esc(p.id)}"><td><b>${esc(p.name)}</b>${p.address?`<small class="project-sub">${esc(p.address)}</small>`:''}</td><td><span class="status ${p.status==='Aktivan'?'green':p.status==='Isporučeno'?'blue':'gray'}">${esc(p.status)}</span></td><td>${esc(p.start||'—')}</td><td>${esc(p.end||'—')}</td><td>${p.workers}</td><td>${esc(p.cost)}</td><td>${esc(p.billed)}</td><td><b>${esc(result(p))}</b></td><td><button class="project-edit-btn" data-edit-id="${esc(p.id)}">Uredi</button></td></tr>`).join('');const empty=$('taskerProjectEmpty');if(empty)empty.hidden=rows.length>0}
+function view(){if(window.title)window.title.textContent='Gradilišta';else if($('title'))$('title').textContent='Gradilišta';const host=window.content||$('content');if(!host)return;host.innerHTML=`<div class="projects-topbar"><div class="project-filter-group">${['Aktivni','Isporučeno','Arhiva','Sve'].map(x=>`<button class="filter ${filter===x?'active':''}" data-project-filter="${x}">${x}</button>`).join('')}</div><div class="project-top-actions"><div class="project-search">⌕ <input id="taskerProjectSearch" value="${esc(search)}" placeholder="Pretraži gradilišta..."></div><button class="btn" id="taskerNewProject">+ Novo gradilište</button></div></div><div class="card table-card project-table-card"><table class="project-table"><thead><tr><th>Projekt</th><th>Status</th><th>Početak</th><th>Završetak</th><th>Radnici</th><th>Trošak</th><th>Fakturirano</th><th>Rezultat</th><th></th></tr></thead><tbody id="taskerProjectRows"></tbody></table><div id="taskerProjectEmpty" class="project-empty" hidden>Nema gradilišta u ovom prikazu.</div></div>`;renderRows();
+$('taskerNewProject').onclick=()=>form();$('taskerProjectSearch').oninput=e=>{search=e.target.value;renderRows()};document.querySelectorAll('[data-project-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.projectFilter;view()});$('taskerProjectRows').onclick=e=>{const edit=e.target.closest('[data-edit-id]');if(edit){e.stopPropagation();form(edit.dataset.editId);return}const row=e.target.closest('[data-project-id]');if(row)workspace(row.dataset.projectId)}
 }
-function saveProjectsStore(){localStorage.setItem(PROJECTS_KEY,JSON.stringify(projectsData))}
-function pEsc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function moneyNum(v){return Number(String(v??0).replace(/[^0-9,-]/g,'').replace(/\./g,'').replace(',','.'))||0}
-function moneyFmt(v){return new Intl.NumberFormat('hr-HR',{minimumFractionDigits:0,maximumFractionDigits:2}).format(Number(v)||0)+' €'}
-function displayDate(raw){if(!raw)return'';if(/^\d{2}\.\d{2}\.\d{4}$/.test(raw))return raw;const p=raw.split('-');return p.length===3?`${p[2]}.${p[1]}.${p[0]}`:raw}
-function inputDate(raw){if(!raw)return'';if(/^\d{4}-\d{2}-\d{2}$/.test(raw))return raw;const m=raw.match(/(\d{2})\.(\d{2})\.(\d{4})/);return m?`${m[3]}-${m[2]}-${m[1]}`:''}
-function projectStatusClass(s){return s==='Aktivan'?'green':s==='Isporučeno'?'blue':'gray'}
-function normalizeProject(p){
-  p.id=p.id||('PRJ-'+Date.now()+'-'+Math.random().toString(16).slice(2,6));
-  p.name=p.name||'Novo gradilište'; p.status=p.status||'Aktivan'; p.start=p.start||''; p.end=p.end||'';
-  p.workers=Number(p.workers)||0; p.cost=typeof p.cost==='number'?moneyFmt(p.cost):p.cost||'0 €'; p.billed=typeof p.billed==='number'?moneyFmt(p.billed):p.billed||'0 €';
-  p.result=moneyFmt(moneyNum(p.billed)-moneyNum(p.cost)); p.progress=Math.max(0,Math.min(100,Number(p.progress)||0));
-  p.address=p.address||''; p.client=p.client||''; p.manager=p.manager||''; p.note=p.note||'';
-  return p;
-}
-loadProjectsStore(); projectsData.forEach(normalizeProject);
-
-function projects(){
- title.textContent='Gradilišta';
- const rows=getFilteredProjects();
- content.innerHTML=`<div class="projects-topbar">
-   <div class="project-filter-group">
-    <button class="filter ${projectFilter==='Aktivni'?'active':''}" onclick="setProjectFilter('Aktivni')">Aktivni</button>
-    <button class="filter ${projectFilter==='Isporučeno'?'active':''}" onclick="setProjectFilter('Isporučeno')">Isporučeno</button>
-    <button class="filter ${projectFilter==='Arhiva'?'active':''}" onclick="setProjectFilter('Arhiva')">Arhiva</button>
-    <button class="filter ${projectFilter==='Sve'?'active':''}" onclick="setProjectFilter('Sve')">Sve</button>
-   </div>
-   <div class="project-top-actions"><div class="project-search">⌕ <input value="${pEsc(projectSearch)}" oninput="projectSearch=this.value;renderProjectRows()" placeholder="Pretraži gradilišta..."></div><button class="btn" onclick="openProjectForm()">+ Novo gradilište</button></div>
- </div>
- <div class="card table-card project-table-card"><table class="project-table"><thead><tr><th>Projekt</th><th>Status</th><th>Početak</th><th>Završetak</th><th>Radnici</th><th>Trošak</th><th>Fakturirano</th><th>Rezultat</th><th></th></tr></thead><tbody id="projectRows"></tbody></table><div class="project-empty" id="projectEmpty" hidden>Nema gradilišta u ovom prikazu.</div></div>`;
- renderProjectRows();
-}
-function getFilteredProjects(){
- const q=projectSearch.trim().toLowerCase();
- return projectsData.filter(p=>{
-   const statusOk=projectFilter==='Sve'||(projectFilter==='Aktivni'&&p.status==='Aktivan')||(projectFilter==='Isporučeno'&&p.status==='Isporučeno')||(projectFilter==='Arhiva'&&p.status==='Arhiva');
-   const searchOk=!q||`${p.name} ${p.client||''} ${p.address||''} ${p.manager||''}`.toLowerCase().includes(q);
-   return statusOk&&searchOk;
- });
-}
-function setProjectFilter(v){projectFilter=v;projects()}
-function renderProjectRows(){
- const body=document.getElementById('projectRows'); if(!body)return;
- const rows=getFilteredProjects();
- body.innerHTML=rows.map(p=>`<tr class="table-link" onclick="openProjectDetailById('${p.id}')"><td><b>${pEsc(p.name)}</b>${p.address?`<small class="project-sub">${pEsc(p.address)}</small>`:''}</td><td>${pill(pEsc(p.status),projectStatusClass(p.status))}</td><td>${pEsc(p.start||'—')}</td><td>${pEsc(p.end||'—')}</td><td>${p.workers}</td><td>${pEsc(p.cost)}</td><td>${pEsc(p.billed)}</td><td><b>${pEsc(p.result)}</b></td><td><button class="project-edit-btn" onclick="event.stopPropagation();openProjectForm('${p.id}')">Uredi</button></td></tr>`).join('');
- const empty=document.getElementById('projectEmpty'); if(empty)empty.hidden=rows.length!==0;
-}
-function openProjectForm(id){
- const current=id?projectsData.find(x=>x.id===id):null;
- document.getElementById('projectOverlay')?.remove();
- const p=current||{name:'',status:'Aktivan',start:'',end:'',workers:0,cost:'0 €',billed:'0 €',progress:0,address:'',client:'',manager:'',note:''};
- document.body.insertAdjacentHTML('beforeend',`<div class="project-overlay" id="projectOverlay"><div class="project-modal"><div class="project-modal-head"><div><small>${current?'UREĐIVANJE PROJEKTA':'NOVO GRADILIŠTE'}</small><h3>${current?pEsc(current.name):'Dodaj gradilište'}</h3></div><button onclick="closeProjectOverlay()">×</button></div><div class="project-form-grid">
- <label><span>Naziv projekta *</span><input id="prName" value="${pEsc(p.name)}" placeholder="npr. Kuća Čolak"></label>
- <label><span>Status</span><select id="prStatus"><option ${p.status==='Aktivan'?'selected':''}>Aktivan</option><option ${p.status==='Isporučeno'?'selected':''}>Isporučeno</option><option ${p.status==='Arhiva'?'selected':''}>Arhiva</option></select></label>
- <label><span>Datum početka</span><input id="prStart" type="date" value="${inputDate(p.start)}"></label>
- <label><span>Datum završetka</span><input id="prEnd" type="date" value="${inputDate(p.end)}"></label>
- <label><span>Investitor / kupac</span><input id="prClient" value="${pEsc(p.client)}" placeholder="Naziv investitora"></label>
- <label><span>Voditelj projekta</span><input id="prManager" value="${pEsc(p.manager)}" placeholder="Ime voditelja"></label>
- <label class="wide"><span>Adresa gradilišta</span><input id="prAddress" value="${pEsc(p.address)}" placeholder="Ulica, grad"></label>
- <label><span>Broj radnika</span><input id="prWorkers" type="number" min="0" value="${Number(p.workers)||0}"></label>
- <label><span>Napredak %</span><input id="prProgress" type="number" min="0" max="100" value="${Number(p.progress)||0}"></label>
- <label><span>Trošak (€)</span><input id="prCost" type="number" step="0.01" min="0" value="${moneyNum(p.cost)}"></label>
- <label><span>Fakturirano (€)</span><input id="prBilled" type="number" step="0.01" min="0" value="${moneyNum(p.billed)}"></label>
- <label class="wide"><span>Napomena</span><textarea id="prNote" rows="4" placeholder="Napomena o projektu...">${pEsc(p.note)}</textarea></label>
- </div><div class="project-modal-actions">${current?`<button class="project-delete" onclick="deleteProject('${current.id}')">Obriši gradilište</button>`:'<span></span>'}<div><button class="filter" onclick="closeProjectOverlay()">Odustani</button><button class="btn" onclick="saveProject('${current?.id||''}')">${current?'Sačuvaj promjene':'Dodaj gradilište'}</button></div></div></div></div>`);
-}
-function closeProjectOverlay(){document.getElementById('projectOverlay')?.remove()}
-function saveProject(id){
- const name=document.getElementById('prName').value.trim(); if(!name){alert('Unesi naziv gradilišta.');return}
- const data={name,status:document.getElementById('prStatus').value,start:displayDate(document.getElementById('prStart').value),end:displayDate(document.getElementById('prEnd').value),client:document.getElementById('prClient').value.trim(),manager:document.getElementById('prManager').value.trim(),address:document.getElementById('prAddress').value.trim(),workers:Number(document.getElementById('prWorkers').value)||0,progress:Number(document.getElementById('prProgress').value)||0,cost:moneyFmt(Number(document.getElementById('prCost').value)||0),billed:moneyFmt(Number(document.getElementById('prBilled').value)||0),note:document.getElementById('prNote').value.trim()};
- data.result=moneyFmt(moneyNum(data.billed)-moneyNum(data.cost));
- if(id){const p=projectsData.find(x=>x.id===id);Object.assign(p,data)} else projectsData.unshift(normalizeProject({id:'PRJ-'+Date.now(),...data}));
- saveProjectsStore(); closeProjectOverlay(); projects();
-}
-function deleteProject(id){if(!confirm('Obrisati ovo gradilište?'))return;const i=projectsData.findIndex(x=>x.id===id);if(i>=0)projectsData.splice(i,1);saveProjectsStore();closeProjectOverlay();projects()}
-function openProjectDetailById(id){const p=projectsData.find(x=>x.id===id);if(!p)return;openProjectWorkspace(p)}
-function openProjectDetail(name){const p=projectsData.find(x=>x.name===name);if(!p)return;openProjectWorkspace(p)}
-function openProjectWorkspace(p){
- title.textContent=p.name;
- content.innerHTML=`<div class="project-detail-toolbar"><button class="filter" onclick="projects()">← Sva gradilišta</button><div><button class="filter" onclick="openProjectForm('${p.id}')">Uredi</button><button class="btn" onclick="setProjectQuickStatus('${p.id}')">Promijeni status</button></div></div>
- <div class="hero"><div><h2>${pEsc(p.name)}</h2><p>${p.address?pEsc(p.address)+' • ':''}${p.client?'Investitor: '+pEsc(p.client)+' • ':''}Početak: ${pEsc(p.start||'—')}</p></div><div class="chip">${p.progress}% ZAVRŠENO</div></div>
- <div class="grid kpis">${detailKpi('Radnici',p.workers)}${detailKpi('Trošak',p.cost)}${detailKpi('Fakturirano',p.billed)}${detailKpi('Rezultat',p.result)}</div>
- <div class="project-progress-card card"><div class="section-title"><h3>Napredak projekta</h3><b>${p.progress}%</b></div><div class="progress large"><span style="width:${p.progress}%"></span></div></div>
- <div class="grid split"><div class="card"><div class="section-title"><h3>Podaci gradilišta</h3></div>${mini(['Podatak','Vrijednost'],[['Status',p.status],['Početak',p.start||'—'],['Završetak',p.end||'—'],['Investitor',p.client||'—'],['Voditelj',p.manager||'—'],['Adresa',p.address||'—'],['Napomena',p.note||'—']])}</div><div class="card"><div class="section-title"><h3>Rad u projektu</h3></div><button class="btn quick-action" onclick="show('hours')">Radni sati</button><button class="btn secondary quick-action" onclick="show('orders')">Narudžbenice</button><button class="btn secondary quick-action" onclick="show('incomingInvoices')">Ulazni računi</button><button class="btn secondary quick-action" onclick="show('invoices')">Fakture</button><button class="btn secondary quick-action" onclick="show('companyDocs')">Dokumentacija</button><button class="btn secondary quick-action" onclick="show('employees')">Radnici</button></div></div>`;
-}
-function setProjectQuickStatus(id){const p=projectsData.find(x=>x.id===id);if(!p)return;const order=['Aktivan','Isporučeno','Arhiva'];p.status=order[(order.indexOf(p.status)+1)%order.length];saveProjectsStore();openProjectWorkspace(p)}
+function form(id=''){const current=list.find(x=>x.id===id);const p=current||{name:'',status:'Aktivan',start:'',end:'',workers:0,cost:'0 €',billed:'0 €',progress:0,address:'',client:'',manager:'',note:''};document.getElementById('projectOverlay')?.remove();document.body.insertAdjacentHTML('beforeend',`<div class="project-overlay" id="projectOverlay"><div class="project-modal"><div class="project-modal-head"><div><small>${current?'UREĐIVANJE PROJEKTA':'NOVO GRADILIŠTE'}</small><h3>${current?esc(current.name):'Dodaj gradilište'}</h3></div><button id="taskerProjectClose">×</button></div><div class="project-form-grid"><label><span>Naziv projekta *</span><input id="prName" value="${esc(p.name)}"></label><label><span>Status</span><select id="prStatus"><option ${p.status==='Aktivan'?'selected':''}>Aktivan</option><option ${p.status==='Isporučeno'?'selected':''}>Isporučeno</option><option ${p.status==='Arhiva'?'selected':''}>Arhiva</option></select></label><label><span>Datum početka</span><input id="prStart" type="date" value="${dateToInput(p.start)}"></label><label><span>Datum završetka</span><input id="prEnd" type="date" value="${dateToInput(p.end)}"></label><label><span>Investitor / kupac</span><input id="prClient" value="${esc(p.client)}"></label><label><span>Voditelj projekta</span><input id="prManager" value="${esc(p.manager)}"></label><label class="wide"><span>Adresa gradilišta</span><input id="prAddress" value="${esc(p.address)}"></label><label><span>Broj radnika</span><input id="prWorkers" type="number" min="0" value="${p.workers}"></label><label><span>Napredak %</span><input id="prProgress" type="number" min="0" max="100" value="${p.progress}"></label><label><span>Trošak (€)</span><input id="prCost" type="number" min="0" step="0.01" value="${num(p.cost)}"></label><label><span>Fakturirano (€)</span><input id="prBilled" type="number" min="0" step="0.01" value="${num(p.billed)}"></label><label class="wide"><span>Napomena</span><textarea id="prNote" rows="4">${esc(p.note)}</textarea></label></div><div class="project-modal-actions">${current?'<button class="project-delete" id="taskerProjectDelete">Obriši gradilište</button>':'<span></span>'}<div><button class="filter" id="taskerProjectCancel">Odustani</button><button class="btn" id="taskerProjectSave">${current?'Sačuvaj promjene':'Dodaj gradilište'}</button></div></div></div></div>`);const close=()=>document.getElementById('projectOverlay')?.remove();$('taskerProjectClose').onclick=close;$('taskerProjectCancel').onclick=close;$('taskerProjectSave').onclick=()=>{const name=$('prName').value.trim();if(!name){alert('Unesi naziv gradilišta.');return}const data={name,status:$('prStatus').value,start:dateFromInput($('prStart').value),end:dateFromInput($('prEnd').value),client:$('prClient').value.trim(),manager:$('prManager').value.trim(),address:$('prAddress').value.trim(),workers:Number($('prWorkers').value)||0,progress:Math.max(0,Math.min(100,Number($('prProgress').value)||0)),cost:money($('prCost').value),billed:money($('prBilled').value),note:$('prNote').value.trim()};if(current)Object.assign(current,data);else list.unshift({id:'PRJ-'+Date.now(),...data});save();close();view()};if(current)$('taskerProjectDelete').onclick=()=>{if(!confirm('Obrisati ovo gradilište?'))return;list=list.filter(x=>x.id!==current.id);save();close();view()}}
+function workspace(id){const p=list.find(x=>x.id===id);if(!p)return;if($('title'))$('title').textContent=p.name;const host=$('content');host.innerHTML=`<div class="project-detail-toolbar"><button class="filter" id="backProjects">← Sva gradilišta</button><div><button class="filter" id="editProject">Uredi</button><button class="btn" id="statusProject">Promijeni status</button></div></div><div class="hero"><div><h2>${esc(p.name)}</h2><p>${p.address?esc(p.address)+' • ':''}${p.client?'Investitor: '+esc(p.client)+' • ':''}Početak: ${esc(p.start||'—')}</p></div><div class="chip">${p.progress}% ZAVRŠENO</div></div><div class="grid kpis"><div class="card kpi"><label>Radnici</label><strong>${p.workers}</strong></div><div class="card kpi"><label>Trošak</label><strong>${esc(p.cost)}</strong></div><div class="card kpi"><label>Fakturirano</label><strong>${esc(p.billed)}</strong></div><div class="card kpi"><label>Rezultat</label><strong>${esc(result(p))}</strong></div></div><div class="card project-progress-card"><div class="section-title"><h3>Napredak projekta</h3><b>${p.progress}%</b></div><div class="progress large"><span style="width:${p.progress}%"></span></div></div><div class="grid split"><div class="card"><div class="section-title"><h3>Podaci gradilišta</h3></div><div class="details"><div class="detail"><label>Status</label><b>${esc(p.status)}</b></div><div class="detail"><label>Investitor</label><b>${esc(p.client||'—')}</b></div><div class="detail"><label>Voditelj</label><b>${esc(p.manager||'—')}</b></div><div class="detail"><label>Adresa</label><b>${esc(p.address||'—')}</b></div><div class="detail"><label>Završetak</label><b>${esc(p.end||'—')}</b></div><div class="detail"><label>Napomena</label><b>${esc(p.note||'—')}</b></div></div></div><div class="card"><div class="section-title"><h3>Rad u projektu</h3></div><button class="btn quick-action" data-go="hours">Radni sati</button><button class="btn secondary quick-action" data-go="orders">Narudžbenice</button><button class="btn secondary quick-action" data-go="incomingInvoices">Ulazni računi</button><button class="btn secondary quick-action" data-go="invoices">Fakture</button><button class="btn secondary quick-action" data-go="companyDocs">Dokumentacija</button><button class="btn secondary quick-action" data-go="employees">Radnici</button></div></div>`;$('backProjects').onclick=view;$('editProject').onclick=()=>form(p.id);$('statusProject').onclick=()=>{const order=['Aktivan','Isporučeno','Arhiva'];p.status=order[(order.indexOf(p.status)+1)%order.length];save();workspace(p.id)};document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>window.show(b.dataset.go))}
+window.taskerProjectsView=view;window.openTaskerProjectForm=form;window.openTaskerProjectWorkspace=workspace;
+const oldShow=window.show;if(typeof oldShow==='function')window.show=function(v){if(v==='projects')return view();return oldShow(v)};
+window.openProjectDetail=function(name){const p=list.find(x=>x.name===name);if(p)workspace(p.id)};
+document.addEventListener('click',e=>{const btn=e.target.closest('[data-view="projects"]');if(btn)setTimeout(view,0)});
+})();
