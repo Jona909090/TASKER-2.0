@@ -23,3 +23,12 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   });
 });
+
+(()=>{
+  if(!document.querySelector('link[href="share-actions.css"]')){
+    const l=document.createElement('link');l.rel='stylesheet';l.href='share-actions.css';document.head.appendChild(l);
+  }
+  if(!document.querySelector('script[src="share-actions.js"]')){
+    const s=document.createElement('script');s.src='share-actions.js';s.defer=true;document.body.appendChild(s);
+  }
+})();
