@@ -22,11 +22,4 @@ document.addEventListener('DOMContentLoaded',()=>{
       else if(label==='postavke')renderRailPage('postavke',btn);
     });
   });
-
-  const delivery=document.querySelector('.side-quick button:nth-child(2)');
-  if(delivery)delivery.addEventListener('click',()=>{
-    title.textContent='Dostava dokumenata';
-    document.querySelectorAll('[data-view]').forEach(x=>x.classList.remove('active'));
-    content.innerHTML=`<div class="toolbar"><div><h2 style="margin:0">Dostava dokumenata</h2><p class="muted">Dokumenti poslani firmi na obradu.</p></div><button class="btn">+ Dostavi dokument</button></div><div class="card table-card"><table><thead><tr><th>Dokument</th><th>Pošiljatelj</th><th>Datum</th><th>Vrsta</th><th>Status</th></tr></thead><tbody><tr><td>Račun 698-1-1</td><td>Radnik usluge d.o.o.</td><td>18.08.2026</td><td>Ulazni račun</td><td>${pill('Novo','yellow')}</td></tr><tr><td>Ponuda P-2026-044</td><td>Demo dobavljač</td><td>18.08.2026</td><td>Ponuda</td><td>${pill('Novo','yellow')}</td></tr><tr><td>Dokument radnika</td><td>Kadrovska</td><td>17.08.2026</td><td>Dokument</td><td>${pill('Zaprimljeno','green')}</td></tr></tbody></table></div>`;
-  });
 });
