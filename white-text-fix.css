@@ -1,25 +1,32 @@
 /* TASKER 2.0 — dashboard readability fix */
 #content .card,
-#content .card strong,
-#content .card b,
-#content .card h2,
-#content .card h3,
-#content .card h4,
-#content .card .project,
-#content .card .project strong,
-#content .card .project b,
-#content .card .project-head,
-#content .card .alert,
-#content .card .alert strong,
-#content .card .alert b,
+#content .card *,
 #content .project,
-#content .project strong,
-#content .project b,
-#content .project-head,
+#content .project *,
 #content .alert,
-#content .alert strong,
-#content .alert b,
-#content button,
-#content td {
-  color: #fff;
+#content .alert *,
+#content .dashboard-card,
+#content .dashboard-card *,
+#content .project-click,
+#content .project-click *,
+#content .alert-click,
+#content .alert-click *,
+#content .project-open,
+#content button.project,
+#content button.alert {
+  color: #fff !important;
+}
+
+/* Zadržavamo pomoćne informacije u svijetloplavom/sivom tonu */
+#content .project small,
+#content .alert small,
+#content .muted,
+#content .kpi label {
+  color: #8ea0b7 !important;
+}
+
+/* Zeleni statusni/redni tekstovi ostaju zeleni */
+#content .kpi small,
+#content .green {
+  color: #35d09b !important;
 }
